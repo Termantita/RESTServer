@@ -1,34 +1,31 @@
-const { response, request } = require('express');
-const bcryptjs = require('bcryptjs');
+const { response, request } = require("express");
+const bcryptjs = require("bcryptjs");
 
-const User = require('../models/user');
-
+const User = require("../models/user");
 
 const usersGet = async (req = request, res = response) => {
   const { limit = 5, from = 0 } = req.query;
-  const query = {status: true};
+  const query = { status: true };
 
-  if(isNaN(limit) && isNaN(from)) {
-    const limit = 5;
-    const from = 0;
-  };
+  if (isNaN(limit) && isNaN(from)) {
+    limit = 5;
+    from = 0;
+  }
 
-  const [ total, users ] = await Promise.all([
+  const [total, users] = await Promise.all([
     User.countDocuments(query),
-    User.find(query)
-    .skip(Number(from))
-    .limit(Number(limit)) 
+    User.find(query).skip(Number(from)).limit(Number(limit)),
   ]);
 
   res.json({
     total,
-    users
+    users,
   });
-}
+};
 
 const usersPost = async (req, res = response) => {
   const { name, email, password, role } = req.body;
-  const user = new User({name, email, password, role});
+  const user = new User({ name, email, password, role });
 
   // Encrypt password
   const salt = bcryptjs.genSaltSync();
@@ -38,61 +35,54 @@ const usersPost = async (req, res = response) => {
   await user.save();
 
   res.json({
-    user
-  })
-}
+    user,
+  });
+};
 
 const usersPut = async (req, res = response) => {
   const { id } = req.params;
   const { password, google, status, _id, __v, ...rest } = req.body;
 
-  //TODO: Validar contra base de datos
-  if(password) {
+  if (password) {
     // Encrypt password
     const salt = bcryptjs.genSaltSync();
     rest.password = bcryptjs.hashSync(password, salt);
-
   }
 
-  const user = await User.findByIdAndUpdate(id, rest);
+  const user = await User.findByIdAndUpdate(id, rest, { new: true });
 
   res.json({
-    user
-  })
-}
-
+    user,
+  });
+};
 
 /**
- * @param {Request} req 
- * @param {Response} res 
+ * @param {Request} req
+ * @param {Response} res
  */
 const usersDelete = async (req = request, res = response) => {
   const { id } = req.params;
-  const status = {status: false};
-
-  //TODO: Validar contra base de datos
+  const status = { status: false };
 
   const user = await User.findByIdAndUpdate(id, status);
   const authUser = req.user;
-  
+
   return res.json({
     user,
-    authUser
-  })
-
-}
+    authUser,
+  });
+};
 
 const usersPatch = (req, res = response) => {
   res.json({
-    msg: 'PATCH api'
-  })
-}
-
+    msg: "PATCH api",
+  });
+};
 
 module.exports = {
   usersGet,
   usersPost,
   usersPut,
   usersDelete,
-  usersPatch
-}
+  usersPatch,
+};
